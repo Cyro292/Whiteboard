@@ -31,4 +31,4 @@ jobs:
     - name: Run Tests
       run: |
         python whiteboard/manage.py test
-        pylint --load-plugins pylint_django --disable=C,E5110,W0611 $(git ls-files '*.py')
+        pylint --load-plugins pylint_django --disable=C,E5110,W0611,W0511 $(git ls-files '*.py')
