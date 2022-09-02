@@ -4,10 +4,6 @@ from django.test import TestCase, Client
 
 class Test_Index(TestCase):
     
-    def setUp(self) -> None:
-        #TODO
-        return super().setUp()
-    
     def test_index(self):
         client = Client()
         response = client.get("")
