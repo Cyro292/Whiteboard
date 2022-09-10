@@ -8,7 +8,9 @@ from . import models
 
 @login_required(login_url='signin')
 def index(request):
-    return render(request, "index.html")
+    return render(request, "index.html",  
+        {"message": "hey"
+        })
 
 def signin(request):
     return render(request, "signin.html")
