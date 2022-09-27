@@ -13,7 +13,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v3
@@ -24,8 +24,11 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip freeze > requirements.txt
-        pip install -r requirements.txt
+        python -m pip install Django 
+    - name: Install Tests
+      run: |
+        pip install pylint-django
     - name: Run Tests
       run: |
-        python manage.py test
+        python whiteboard/manage.py test
+        pylint --load-plugins pylint_django --disable=C,E5110,W0611,W0511 $(git ls-files '*.py')
