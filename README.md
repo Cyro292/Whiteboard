@@ -1,0 +1,2 @@
+# Whiteboard
+Our collaborative whiteboard
