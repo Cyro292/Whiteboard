@@ -5,3 +5,4 @@ from . import models
 
 admin.site.register(models.Board)
 admin.site.register(models.Client)
+admin.site.register(models.UserParticipation)
