@@ -7,6 +7,9 @@
     <title>Document</title>
 </head>
 <body>
+    {% for message in messages %}
+		<p>{{message}}</p>
+		{% endfor %}
     {{boards}}
     <a href="{% url 'add_board' %}">add a board</a>
 </body>

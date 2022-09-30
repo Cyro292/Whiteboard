@@ -47,43 +47,29 @@ class Board(models.Model):
                 permission=permission)
     
     def get_permission_label(self, client):
-        return self.clients.through.objects.get(board=self.pk, client=client.pk).get_permission_display()
+        return self.userparticipation_set.get(client=client).get_permission_display()
     
     def get_permission(self, client):
 
-        return self.clients.participation_set.get(client=client.pk).permission
-    
-    def set_owner(self, client):
-        
-        if not self.clients.get(client).exist():
-            raise ObjectDoesNotExist("Not found")
-        
-        if self.clients.get(permission=Participation.OWNER).exist():
-            self.participation_set.get(permission=Participation.OWNER).permission = Participation.ADMIN
-        
-        self.participation_set.get(client).permission = Participation.OWNER
+        return self.userparticipation_set.get(client=client).permission    
         
     def set_permission(self, client, permission):
         
-        if permission not in (Participation.READER, Participation.WRITER, Participation.ADMIN):
+        if permission in (Participation.READER, Participation.WRITER, Participation.ADMIN):
             
-            is_in_clients = self.clients.get(client).exist()
-            is_in_anonymous_clients = self.anonymous_clients.get(client).exist()
+            in_clients = self.clients.get(client).exist()
             
-            if not is_in_clients and not is_in_anonymous_clients:
+            if not in_clients:
                 raise ObjectDoesNotExist("Not found")
             
-            elif is_in_clients and not is_in_anonymous_clients:
-                self.clients.get(client).permission = permission
-                
-            elif not is_in_clients and is_in_anonymous_clients:
-                self.anonymous_clients.get(client).permission = permission
-        
             else:
-                raise Exception("something went wrong")
+                self.userparticipation_set.get(client=client).permission = permission
                 
         elif permission is Participation.OWNER:
-            raise ValueError("use set_owner to set the OWNER")
+            if self.clients.get(permission=Participation.OWNER).exist():
+                self.userparticipation_set.get(permission=Participation.OWNER).permission = Participation.ADMIN
+        
+            self.userparticipation_set.get(client=client).permission = Participation.OWNER
         else:
             raise ValueError("unknown permission " + permission)
     

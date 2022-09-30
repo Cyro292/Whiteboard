@@ -111,6 +111,10 @@ def add_board(request):
     if request.method == "POST":
         name = request.POST["name"]
         
+        if request.user.client.boards.filter(name=name).exists():
+            messages.info(request, "name already used")
+            return redirect('add_board')
+        
         board = models.Board.objects.create(name=name)
         board.save()
         board.add_client(client=request.user.client, permission=models.Participation.OWNER)
@@ -123,15 +127,12 @@ def add_board(request):
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
 def boards(request: HttpRequest):
-    #boards = request.user.client.boards.values('name', permission=get_permission(request.user.client))
     list = []
     for board in request.user.client.boards.all():
         dic = {}
         dic['name'] = board.name
-        dic['permission'] = board.get_permission(request.user.client)
+        dic['permission'] = board.get_permission_label(request.user.client)
         list.append(dic)
-        
-    #permission = boards.get_permission(request.user)
     
     return render(request, "boards.html", {"boards" : str(list)})  
 
