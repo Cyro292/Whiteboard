@@ -13,11 +13,11 @@ from . import models
 
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
-def index(request):
+def index_view(request):
     return render(request, "index.html")
     
 @require_http_methods(["POST", "GET"])
-def signin(request):
+def signin_view(request):
     if request.method == "POST":
         
         email = request.POST["email"]
@@ -37,12 +37,12 @@ def signin(request):
     
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
-def signout(request):
+def signout_view(request):
     logout(request)
     return render(request, "signout.html")
    
 @require_http_methods(["POST", "GET"]) 
-def register(request):
+def register_view(request):
     if request.method == "POST":
         
         username = request.POST["username"]
@@ -88,7 +88,7 @@ def register(request):
         return render(request, "register.html")
    
 @require_http_methods(["POST", "GET"]) 
-def invite(request: HttpRequest, code):
+def invite_view(request: HttpRequest, code):
     
     #TODO: code gets matched with a board via the AuthenticationLink tabel in models.py
     # then the user dicites whether he want to log in (if he is not authenticated) or if he want to create a temp account
@@ -101,7 +101,7 @@ def invite(request: HttpRequest, code):
 
 @login_required(login_url="signin")
 @require_http_methods(["POST", "GET"])
-def add_board(request):
+def add_board_view(request):
     if request.method == "POST":
         name = request.POST["name"]
         
@@ -120,19 +120,19 @@ def add_board(request):
       
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
-def boards(request: HttpRequest):
-    list = []
+def boards_view(request: HttpRequest):
+    board_list = []
     for board in request.user.client.boards.all():
         dic = {}
         dic['name'] = board.name
         dic['permission'] = board.get_permission_label(request.user.client)
-        list.append(dic)
+        board_list.append(dic)
     
-    return render(request, "boards.html", {"boards" : str(list)})  
+    return render(request, "boards.html", {"boards" : str(board_list)})  
 
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
-def board(request: HttpRequest, id):
+def board_view(request: HttpRequest, id):
     
     # can only be ac
 
