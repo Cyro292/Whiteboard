@@ -23,13 +23,7 @@ def signin(request):
         email = request.POST["email"]
         password = request.POST["password"]
         
-        try:
-            username = get_user_model().objects.get(email=email)
-        except exceptions.ObjectDoesNotExist:
-            messages.info(request, "user not found")
-            redirect("signin")
-        
-        user = authenticate(username=username, email=email, password=password)
+        user = authenticate(email=email, password=password)
 
         if user is None:
             messages.info(request, "user not found")

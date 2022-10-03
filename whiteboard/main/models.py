@@ -2,9 +2,44 @@ import secrets
 from datetime import datetime
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
+
+
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=255)
+    email = models.EmailField(_('email address'), unique=True)
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+    
+class UserProfileManager(BaseUserManager):
+    def create_user(self, email, username, password=None):
+        """ Create a new user profile """
+        if not email:
+            raise ValueError('User must have an email address')
+
+        email = self.normalize_email(email)
+        user = self.model(email=email, username=username)
+
+        user.set_password(password)
+        user.save(using=self._db)
+
+        return user
+
+    def create_superuser(self, email, username, password):
+        """ Create a new superuser profile """
+        user = self.create_user(email, username, password)
+        user.is_superuser = True
+        user.is_staff = True
+
+        user.save(using=self._db)
+
+        return user
+    
 class Client(models.Model):
     
     user = models.OneToOneField(
