@@ -1,15 +1,18 @@
 import secrets
 from datetime import datetime
 from django.db import models
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import get_user_model
-from django import forms
 
 # Create your models here.
 
 class Client(models.Model):
     
-    user = models.OneToOneField(get_user_model(), related_name="client", blank=False, null=False, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        get_user_model(), 
+        related_name="client", 
+        blank=False, 
+        null=False, 
+        on_delete=models.CASCADE)
     
     def __str__(self) -> str:
         return str(self.user)
@@ -30,21 +33,29 @@ class Board(models.Model):
             through="AnonymousParticipation"
             )
     
+    @property
+    def owner(self):
+        return self.userparticipation_set.get(permission=Participation.OWNER).client
+    
     def add_client(self, client, permission=None):
         
         if permission is None:
             permission = Participation.READER
-        
-        if isinstance(client, Client):
-            return UserParticipation.objects.create(
-                    board=self, 
-                    client=client, 
-                    permission=permission)
-        else:
-            return AnonymousParticipation.objects.create(
+
+        return UserParticipation.objects.create(
                 board=self, 
                 client=client, 
-                permission=permission)
+                permission=permission)        
+    
+    def get_all_clients(self):
+        return self.clients.all()
+    
+    def remove_client(self, client):
+        
+        if self.get_permission(client) == Participation.OWNER:
+            raise Exception("cant remove the owner")
+        
+        self.clients.remove(client=client)
     
     def get_permission_label(self, client):
         return self.userparticipation_set.get(client=client).get_permission_display()
@@ -57,13 +68,7 @@ class Board(models.Model):
         
         if permission in (Participation.READER, Participation.WRITER, Participation.ADMIN):
             
-            in_clients = self.clients.get(client).exist()
-            
-            if not in_clients:
-                raise ObjectDoesNotExist("Not found")
-            
-            else:
-                self.userparticipation_set.get(client=client).permission = permission
+            self.userparticipation_set.get(client=client).permission = permission
                 
         elif permission is Participation.OWNER:
             if self.clients.get(permission=Participation.OWNER).exist():
@@ -72,6 +77,9 @@ class Board(models.Model):
             self.userparticipation_set.get(client=client).permission = Participation.OWNER
         else:
             raise ValueError("unknown permission " + permission)
+        
+    def __str__(self) -> str:
+        return f"{self.name}"
     
 class Participation(models.Model):
     OWNER = 1

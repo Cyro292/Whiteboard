@@ -25,7 +25,7 @@ def signin(request):
         
         try:
             username = get_user_model().objects.get(email=email)
-        except models.ObjectDoesNotExist:
+        except exceptions.ObjectDoesNotExist:
             messages.info(request, "user not found")
             redirect("signin")
         
@@ -136,16 +136,14 @@ def boards(request: HttpRequest):
     
     return render(request, "boards.html", {"boards" : str(list)})  
 
-
+@require_http_methods(["GET"])
+@login_required(login_url="signin")
 def board(request: HttpRequest, id):
     
     # can only be ac
-    
-    try: 
-        request.user.client.boards.get(pk=id)
-        return HttpResponse("true")
-    except models.ObjectDoesNotExist: 
-        raise Http404("Object dose not exist")
+
+    obj = get_object_or_404(request.user.client.boards, pk=id)
+    return HttpResponse(f"worked {obj}")
     
     # gives 
     
