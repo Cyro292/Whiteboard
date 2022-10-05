@@ -9,15 +9,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
-
-
-
-class CustomUser(AbstractUser):
-    username = models.CharField(max_length=255)
-    email = models.EmailField(_('email address'), unique=True)
-    
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
     
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, username=None, password=None):
@@ -28,15 +19,15 @@ class UserProfileManager(BaseUserManager):
             username=email
 
         email = self.normalize_email(email)
-        user = self.model(email=email)
+        user = self.model(email=email, username=username)
 
         user.set_password(password)
         user.save(using=self._db)
-        Client.objects.create(user)
+        Client.objects.create(user=user)
 
         return user
 
-    def create_superuser(self, email, username, password):
+    def create_superuser(self, email, username=None, password=None):
         """ Create a new superuser profile """
         user = self.create_user(email, username, password)
         user.is_superuser = True
@@ -74,7 +65,6 @@ class Client(models.Model):
  
 class AnonymousClient(models.Model):
     username = models.CharField(max_length=64, blank=False, null=False)
-    session = models.CharField(max_length=225, blank=False, null=False)
     
     def __str__(self) -> str:
         return str(self.username)
