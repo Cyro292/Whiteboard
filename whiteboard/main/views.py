@@ -74,12 +74,9 @@ def register_view(request):
             
         user = get_user_model().objects.create_user(
                 email=email,
-                username=username, 
+                username=username,
                 password=password, 
                 )
-        user.save()
-        client = models.Client(user=user)
-        client.save()
         
         login(request, user=user)
         return redirect('index')
@@ -89,14 +86,7 @@ def register_view(request):
    
 @require_http_methods(["POST", "GET"]) 
 def invite_view(request: HttpRequest, code):
-    
-    #TODO: code gets matched with a board via the AuthenticationLink tabel in models.py
-    # then the user dicites whether he want to log in (if he is not authenticated) or if he want to create a temp account
-    # this works via AnonnymousClient (models.py) and the session libary in which data can be stored inside the server for a specific client
-    # 
-    # the goal is that this method is safe enough that there is no password required to access the board
-    # if this is not possible we can work with the board method in views.py where you can access to every single board via the primary key
-    
+     
     return HttpResponse(code)
 
 @login_required(login_url="signin")
