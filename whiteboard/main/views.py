@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpRequest, Http404
+from django.http import HttpResponse, HttpRequest
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.core.validators import validate_email, validate_slug
@@ -74,7 +74,7 @@ def register_view(request):
             
         user = get_user_model().objects.create_user(
                 email=email,
-                username=username, 
+                username=username,
                 password=password, 
                 )
         user.save()
@@ -90,13 +90,7 @@ def register_view(request):
 @require_http_methods(["POST", "GET"]) 
 def invite_view(request: HttpRequest, code):
     
-    #TODO: code gets matched with a board via the AuthenticationLink tabel in models.py
-    # then the user dicites whether he want to log in (if he is not authenticated) or if he want to create a temp account
-    # this works via AnonnymousClient (models.py) and the session libary in which data can be stored inside the server for a specific client
-    # 
-    # the goal is that this method is safe enough that there is no password required to access the board
-    # if this is not possible we can work with the board method in views.py where you can access to every single board via the primary key
-    
+
     return HttpResponse(code)
 
 @login_required(login_url="signin")
@@ -133,11 +127,8 @@ def boards_view(request: HttpRequest):
 @require_http_methods(["GET"])
 @login_required(login_url="signin")
 def board_view(request: HttpRequest, id):
-    
-    # can only be ac
 
     obj = get_object_or_404(request.user.client.boards, pk=id)
     return HttpResponse(f"worked {obj}")
-    
-    # gives 
+
     

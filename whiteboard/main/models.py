@@ -7,26 +7,20 @@ from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
-
-
-class CustomUser(AbstractUser):
-    username = models.CharField(max_length=255)
-    email = models.EmailField(_('email address'), unique=True)
-    
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
-    
 class UserProfileManager(BaseUserManager):
-    def create_user(self, email, username, password=None):
+    def create_user(self, email, username=None, password=None):
         """ Create a new user profile """
         if not email:
             raise ValueError('User must have an email address')
+        if username is None:
+            username=email
 
         email = self.normalize_email(email)
-        user = self.model(email=email, username=username)
+        user = self.model(email=email)
 
         user.set_password(password)
         user.save(using=self._db)
+        Client.objects.create(user)
 
         return user
 
@@ -39,6 +33,15 @@ class UserProfileManager(BaseUserManager):
         user.save(using=self._db)
 
         return user
+    
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=255)
+    email = models.EmailField(_('email address'), unique=True)
+    
+    
+    objects = UserProfileManager()
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
     
 class Client(models.Model):
     
@@ -54,6 +57,7 @@ class Client(models.Model):
     
 class AnonymousClient(models.Model):
     username = models.CharField(max_length=64, blank=False, null=False)
+    session = models.CharField(max_length=225, blank=False, null=False)
     
     def __str__(self) -> str:
         return str(self.username)
