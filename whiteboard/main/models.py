@@ -1,4 +1,7 @@
+from email.policy import default
 import secrets
+from django.dispatch import receiver
+from django.db.models.signals import post_init, pre_save, post_save
 from datetime import datetime
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -7,6 +10,15 @@ from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 
+
+
+class CustomUser(AbstractUser):
+    username = models.CharField(max_length=255)
+    email = models.EmailField(_('email address'), unique=True)
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+    
 class UserProfileManager(BaseUserManager):
     def create_user(self, email, username=None, password=None):
         """ Create a new user profile """
@@ -54,7 +66,12 @@ class Client(models.Model):
     
     def __str__(self) -> str:
         return str(self.user)
-    
+   
+# @receiver(post_save, sender=CustomUser)
+# def create_client(sender, instance, **kwargs):
+#     if not hasattr(instance, 'client'):
+#         Client.objects.create(user=instance)
+ 
 class AnonymousClient(models.Model):
     username = models.CharField(max_length=64, blank=False, null=False)
     session = models.CharField(max_length=225, blank=False, null=False)
@@ -120,6 +137,11 @@ class Board(models.Model):
     def __str__(self) -> str:
         return f"{self.name}"
     
+@receiver(post_init, sender=Board)
+def delete_expired_clients(sender, instance, **kwargs):
+    if not hasattr(instance, 'client'):
+        Client.objects.create(user=instance)
+
 class Participation(models.Model):
     OWNER = 1
     ADMIN = 2

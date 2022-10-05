@@ -77,9 +77,6 @@ def register_view(request):
                 username=username,
                 password=password, 
                 )
-        user.save()
-        client = models.Client(user=user)
-        client.save()
         
         login(request, user=user)
         return redirect('index')
