@@ -12,7 +12,7 @@
 		{% endfor %}
     <form action="{% url 'add_board' %}" method="post">
         {% csrf_token %}
-        <input type="text" name="name" placeholder="name">
+        {{form.as_p}}
         <input type="submit" value="create">
     </form>
 </body>

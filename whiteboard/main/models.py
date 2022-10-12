@@ -1,4 +1,3 @@
-from email.policy import default
 import secrets
 from django.dispatch import receiver
 from django.db.models.signals import post_init, pre_save, post_save
@@ -7,6 +6,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
+from django import forms
 
 # Create your models here.
     
@@ -23,7 +23,6 @@ class UserProfileManager(BaseUserManager):
 
         user.set_password(password)
         user.save(using=self._db)
-        Client.objects.create(user=user)
 
         return user
 
@@ -45,92 +44,72 @@ class CustomUser(AbstractUser):
     objects = UserProfileManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
-    
-class Client(models.Model):
-    
-    user = models.OneToOneField(
-        get_user_model(), 
-        related_name="client", 
-        blank=False, 
-        null=False, 
-        on_delete=models.CASCADE)
-    
-    def __str__(self) -> str:
-        return str(self.user)
-   
-# @receiver(post_save, sender=CustomUser)
-# def create_client(sender, instance, **kwargs):
-#     if not hasattr(instance, 'client'):
-#         Client.objects.create(user=instance)
  
-class AnonymousClient(models.Model):
+class AnonymousUser(models.Model):
     username = models.CharField(max_length=64, blank=False, null=False)
+    
     
     def __str__(self) -> str:
         return str(self.username)
     
 class Board(models.Model):
     name = models.CharField(max_length=64, blank=False, null=False)
+    password = models.CharField(max_length=64)
     creation_date = models.DateTimeField(default=datetime.now(), null=False)
-    clients = models.ManyToManyField(to=Client, related_name="boards", through="UserParticipation")
-    anonymous_clients = models.ManyToManyField(
-            to=AnonymousClient, 
+    users = models.ManyToManyField(to=get_user_model(), related_name="boards", through="UserParticipation")
+    anonymous_users = models.ManyToManyField(
+            to=AnonymousUser, 
             related_name="boards",
             through="AnonymousParticipation"
             )
     
     @property
     def owner(self):
-        return self.userparticipation_set.get(permission=Participation.OWNER).client
+        return self.userparticipation_set.get(permission=Participation.OWNER).user
     
-    def add_client(self, client, permission=None):
+    def add_user(self, user, permission=None):
         
         if permission is None:
             permission = Participation.READER
 
         return UserParticipation.objects.create(
                 board=self, 
-                client=client, 
+                user=user, 
                 permission=permission)        
     
-    def get_all_clients(self):
-        return self.clients.all()
+    def get_all_users(self):
+        return self.users.all()
     
-    def remove_client(self, client):
+    def remove_user(self, user):
         
-        if self.get_permission(client) == Participation.OWNER:
+        if self.get_permission(user) == Participation.OWNER:
             raise Exception("cant remove the owner")
         
-        self.clients.remove(client=client)
+        self.users.remove(user=user)
     
-    def get_permission_label(self, client):
-        return self.userparticipation_set.get(client=client).get_permission_display()
+    def get_permission_label(self, user):
+        return self.userparticipation_set.get(user=user).get_permission_display()
     
-    def get_permission(self, client):
+    def get_permission(self, user):
 
-        return self.userparticipation_set.get(client=client).permission    
+        return self.userparticipation_set.get(user=user).permission    
         
-    def set_permission(self, client, permission):
+    def set_permission(self, user, permission):
         
         if permission in (Participation.READER, Participation.WRITER, Participation.ADMIN):
             
-            self.userparticipation_set.get(client=client).permission = permission
+            self.userparticipation_set.get(user=user).permission = permission
                 
         elif permission is Participation.OWNER:
-            if self.clients.get(permission=Participation.OWNER).exist():
+            if self.users.get(permission=Participation.OWNER).exist():
                 self.userparticipation_set.get(permission=Participation.OWNER).permission = Participation.ADMIN
         
-            self.userparticipation_set.get(client=client).permission = Participation.OWNER
+            self.userparticipation_set.get(user=user).permission = Participation.OWNER
         else:
             raise ValueError("unknown permission " + permission)
         
     def __str__(self) -> str:
         return f"{self.name}"
-    
-@receiver(post_init, sender=Board)
-def delete_expired_clients(sender, instance, **kwargs):
-    if not hasattr(instance, 'client'):
-        Client.objects.create(user=instance)
 
 class Participation(models.Model):
     OWNER = 1
@@ -153,14 +132,14 @@ class Participation(models.Model):
         abstract = True
         
 class UserParticipation(Participation):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, blank=False, null=False)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, blank=False, null=False)
     
     class Meta:
-        unique_together = [["client", "board"]]
+        unique_together = [["user", "board"]]
 
 class AnonymousParticipation(Participation):
-    client = models.ForeignKey(AnonymousClient, on_delete=models.CASCADE, blank=False, null=False)
+    user = models.ForeignKey(AnonymousUser, on_delete=models.CASCADE, blank=False, null=False)
     
     class Meta:
-        unique_together = [["client", "board"]]
+        unique_together = [["user", "board"]]
     
